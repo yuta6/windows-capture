@@ -5,7 +5,7 @@ use std::sync::{
 
 use parking_lot::Mutex;
 use windows::{
-    Foundation::{Metadata::ApiInformation, TypedEventHandler},
+    Foundation::{Metadata::ApiInformation, TypedEventHandler, TimeSpan},
     Graphics::{
         Capture::{Direct3D11CaptureFramePool, GraphicsCaptureItem, GraphicsCaptureSession},
         DirectX::{Direct3D11::IDirect3DDevice, DirectXPixelFormat},
@@ -160,11 +160,30 @@ impl GraphicsCaptureApi {
 
         // Create frame pool
         let frame_pool =
-            Direct3D11CaptureFramePool::Create(&direct3d_device, pixel_format, 1, item.Size()?)?;
+            Direct3D11CaptureFramePool::Create(&direct3d_device, pixel_format, 3, item.Size()?)?;
         let frame_pool = Arc::new(frame_pool);
 
-        // Create capture session
         let session = frame_pool.CreateCaptureSession(&item)?;
+
+        let before = session.MinUpdateInterval()?;
+        println!("→ default MinUpdateInterval: {}×100 ns", before.Duration);
+
+        const MAX_HZ: u32 = 480;
+        const MIN_INTERVAL_100NS: i64 = (1_000_000 / MAX_HZ as i64) * 10; // 100 ns 単位
+
+        if ApiInformation::IsPropertyPresent(
+            &HSTRING::from("Windows.Graphics.Capture.GraphicsCaptureSession"),
+            &HSTRING::from("MinUpdateInterval"),
+        )? {
+            session.SetMinUpdateInterval(TimeSpan {
+                Duration: MIN_INTERVAL_100NS,
+            })?;
+        } else {
+            println!("MinUpdateInterval property not present - using default 60 Hz");
+        }
+
+        let after = session.MinUpdateInterval()?;
+        println!("→ patched  MinUpdateInterval: {}×100 ns", after.Duration);
 
         // Preallocate memory
         let mut buffer = vec![0u8; 3840 * 2160 * 4];
