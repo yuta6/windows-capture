@@ -367,7 +367,7 @@ impl GraphicsCaptureApiHandler for InnerNativeWindowsCapture {
         let width = frame.width();
         let height = frame.height();
         let timespan = frame.timespan().Duration;
-        let title_bar_height = frame.title_bar_height;
+        let title_bar_height = frame.title_bar_height();
         let mut buffer = frame
             .buffer()
             .map_err(InnerNativeWindowsCaptureError::FrameProcessError)?;
