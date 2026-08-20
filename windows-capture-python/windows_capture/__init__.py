@@ -264,11 +264,6 @@ class WindowsCapture:
                 frame = Frame(ndarray, width, height, timespan, title_bar_height)
                 self.frame_handler(frame, internal_capture_control)
 
-                self.frame_handler(
-                    frame,
-                    internal_capture_control,
-                )
-
         else:
             raise Exception("on_frame_arrived Event Handler Is Not Set")
 
